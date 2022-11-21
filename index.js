@@ -6655,10 +6655,6 @@ function _emscripten_glAttachShader(program, shader) {
  GLctx.attachShader(GL.programs[program], GL.shaders[shader]);
 }
 
-function _emscripten_glBeginTransformFeedback(x0) {
- GLctx["beginTransformFeedback"](x0);
-}
-
 function _emscripten_glBindBuffer(target, buffer) {
  if (target == 35051) {
   GLctx.currentPixelPackBufferBinding = buffer;
@@ -6678,10 +6674,6 @@ function _emscripten_glBindBufferRange(target, index, buffer, offset, ptrsize) {
 
 function _emscripten_glBindFramebuffer(target, framebuffer) {
  GLctx.bindFramebuffer(target, framebuffer ? GL.framebuffers[framebuffer] : GL.currentContext.defaultFbo);
-}
-
-function _emscripten_glBindRenderbuffer(target, renderbuffer) {
- GLctx.bindRenderbuffer(target, GL.renderbuffers[renderbuffer]);
 }
 
 function _emscripten_glBindTexture(target, texture) {
@@ -6752,6 +6744,15 @@ function _emscripten_glClearDepthf(x0) {
  GLctx["clearDepth"](x0);
 }
 
+function convertI32PairToI53(lo, hi) {
+ assert(hi === (hi | 0));
+ return (lo >>> 0) + hi * 4294967296;
+}
+
+function _emscripten_glClientWaitSync(sync, flags, timeoutLo, timeoutHi) {
+ return GLctx.clientWaitSync(GL.syncs[sync], flags, convertI32PairToI53(timeoutLo, timeoutHi));
+}
+
 function _emscripten_glColorMask(red, green, blue, alpha) {
  GLctx.colorMask(!!red, !!green, !!blue, !!alpha);
 }
@@ -6770,10 +6771,6 @@ function _emscripten_glCompressedTexImage2D(target, level, internalFormat, width
   return;
  }
  GLctx["compressedTexImage2D"](target, level, internalFormat, width, height, border, data ? GROWABLE_HEAP_U8().subarray(data, data + imageSize) : null);
-}
-
-function _emscripten_glCopyBufferSubData(x0, x1, x2, x3, x4) {
- GLctx["copyBufferSubData"](x0, x1, x2, x3, x4);
 }
 
 function _emscripten_glCreateProgram() {
@@ -6830,27 +6827,6 @@ function _emscripten_glDeleteProgram(id) {
  GLctx.deleteProgram(program);
  program.name = 0;
  GL.programs[id] = null;
-}
-
-function _emscripten_glDeleteQueries(n, ids) {
- for (var i = 0; i < n; i++) {
-  var id = GROWABLE_HEAP_I32()[ids + i * 4 >> 2];
-  var query = GL.queries[id];
-  if (!query) continue;
-  GLctx["deleteQuery"](query);
-  GL.queries[id] = null;
- }
-}
-
-function _emscripten_glDeleteRenderbuffers(n, renderbuffers) {
- for (var i = 0; i < n; i++) {
-  var id = GROWABLE_HEAP_I32()[renderbuffers + i * 4 >> 2];
-  var renderbuffer = GL.renderbuffers[id];
-  if (!renderbuffer) continue;
-  GLctx.deleteRenderbuffer(renderbuffer);
-  renderbuffer.name = 0;
-  GL.renderbuffers[id] = null;
- }
 }
 
 function _emscripten_glDeleteShader(id) {
@@ -6935,10 +6911,6 @@ function _emscripten_glEnableVertexAttribArray(index) {
  GLctx.enableVertexAttribArray(index);
 }
 
-function _emscripten_glEndTransformFeedback() {
- GLctx["endTransformFeedback"]();
-}
-
 function _emscripten_glFenceSync(condition, flags) {
  var sync = GLctx.fenceSync(condition, flags);
  if (sync) {
@@ -6954,20 +6926,8 @@ function _emscripten_glFinish() {
  GLctx["finish"]();
 }
 
-function _emscripten_glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer) {
- GLctx.framebufferRenderbuffer(target, attachment, renderbuffertarget, GL.renderbuffers[renderbuffer]);
-}
-
 function _emscripten_glFramebufferTexture2D(target, attachment, textarget, texture, level) {
  GLctx.framebufferTexture2D(target, attachment, textarget, GL.textures[texture], level);
-}
-
-function _emscripten_glFramebufferTextureLayer(target, attachment, texture, level, layer) {
- GLctx.framebufferTextureLayer(target, attachment, GL.textures[texture], level, layer);
-}
-
-function _emscripten_glFrontFace(x0) {
- GLctx["frontFace"](x0);
 }
 
 function __glGenObject(n, buffers, createFunction, objectTable) {
@@ -6990,14 +6950,6 @@ function _emscripten_glGenBuffers(n, buffers) {
 
 function _emscripten_glGenFramebuffers(n, ids) {
  __glGenObject(n, ids, "createFramebuffer", GL.framebuffers);
-}
-
-function _emscripten_glGenQueries(n, ids) {
- __glGenObject(n, ids, "createQuery", GL.queries);
-}
-
-function _emscripten_glGenRenderbuffers(n, renderbuffers) {
- __glGenObject(n, renderbuffers, "createRenderbuffer", GL.renderbuffers);
 }
 
 function _emscripten_glGenTextures(n, textures) {
@@ -7431,6 +7383,15 @@ function _emscripten_glReadBuffer(x0) {
  GLctx["readBuffer"](x0);
 }
 
+function _emscripten_glScissor(x0, x1, x2, x3) {
+ GLctx["scissor"](x0, x1, x2, x3);
+}
+
+function _emscripten_glShaderSource(shader, count, string, length) {
+ var source = GL.getSource(shader, count, string, length);
+ GLctx.shaderSource(GL.shaders[shader], source);
+}
+
 function computeUnpackAlignedImageSize(width, height, sizePerPixel, alignment) {
  function roundedToNextMultipleOf(x, y) {
   return x + y - 1 & -y;
@@ -7479,37 +7440,6 @@ function emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, int
  return heap.subarray(pixels >> shift, pixels + bytes >> shift);
 }
 
-function _emscripten_glReadPixels(x, y, width, height, format, type, pixels) {
- if (GL.currentContext.version >= 2) {
-  if (GLctx.currentPixelPackBufferBinding) {
-   GLctx.readPixels(x, y, width, height, format, type, pixels);
-  } else {
-   var heap = heapObjectForWebGLType(type);
-   GLctx.readPixels(x, y, width, height, format, type, heap, pixels >> heapAccessShiftForWebGLHeap(heap));
-  }
-  return;
- }
- var pixelData = emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, format);
- if (!pixelData) {
-  GL.recordError(1280);
-  return;
- }
- GLctx.readPixels(x, y, width, height, format, type, pixelData);
-}
-
-function _emscripten_glRenderbufferStorage(x0, x1, x2, x3) {
- GLctx["renderbufferStorage"](x0, x1, x2, x3);
-}
-
-function _emscripten_glScissor(x0, x1, x2, x3) {
- GLctx["scissor"](x0, x1, x2, x3);
-}
-
-function _emscripten_glShaderSource(shader, count, string, length) {
- var source = GL.getSource(shader, count, string, length);
- GLctx.shaderSource(GL.shaders[shader], source);
-}
-
 function _emscripten_glTexImage2D(target, level, internalFormat, width, height, border, format, type, pixels) {
  if (GL.currentContext.version >= 2) {
   if (GLctx.currentPixelUnpackBufferBinding) {
@@ -7525,17 +7455,6 @@ function _emscripten_glTexImage2D(target, level, internalFormat, width, height, 
  GLctx.texImage2D(target, level, internalFormat, width, height, border, format, type, pixels ? emscriptenWebGLGetTexPixelData(type, format, width, height, pixels, internalFormat) : null);
 }
 
-function _emscripten_glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, pixels) {
- if (GLctx.currentPixelUnpackBufferBinding) {
-  GLctx["texImage3D"](target, level, internalFormat, width, height, depth, border, format, type, pixels);
- } else if (pixels) {
-  var heap = heapObjectForWebGLType(type);
-  GLctx["texImage3D"](target, level, internalFormat, width, height, depth, border, format, type, heap, pixels >> heapAccessShiftForWebGLHeap(heap));
- } else {
-  GLctx["texImage3D"](target, level, internalFormat, width, height, depth, border, format, type, null);
- }
-}
-
 function _emscripten_glTexParameterf(x0, x1, x2) {
  GLctx["texParameterf"](x0, x1, x2);
 }
@@ -7546,24 +7465,6 @@ function _emscripten_glTexParameteri(x0, x1, x2) {
 
 function _emscripten_glTexStorage2D(x0, x1, x2, x3, x4) {
  GLctx["texStorage2D"](x0, x1, x2, x3, x4);
-}
-
-function _emscripten_glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels) {
- if (GLctx.currentPixelUnpackBufferBinding) {
-  GLctx["texSubImage3D"](target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
- } else if (pixels) {
-  var heap = heapObjectForWebGLType(type);
-  GLctx["texSubImage3D"](target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, heap, pixels >> heapAccessShiftForWebGLHeap(heap));
- } else {
-  GLctx["texSubImage3D"](target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, null);
- }
-}
-
-function _emscripten_glTransformFeedbackVaryings(program, count, varyings, bufferMode) {
- program = GL.programs[program];
- var vars = [];
- for (var i = 0; i < count; i++) vars.push(UTF8ToString(GROWABLE_HEAP_I32()[varyings + i * 4 >> 2]));
- GLctx["transformFeedbackVaryings"](program, vars, bufferMode);
 }
 
 function webglGetUniformLocation(location) {
@@ -7587,35 +7488,8 @@ function _emscripten_glUniform1i(location, v0) {
  GLctx.uniform1i(webglGetUniformLocation(location), v0);
 }
 
-function _emscripten_glUniform1ui(location, v0) {
- GLctx.uniform1ui(webglGetUniformLocation(location), v0);
-}
-
 function _emscripten_glUniform1uiv(location, count, value) {
  count && GLctx.uniform1uiv(webglGetUniformLocation(location), GROWABLE_HEAP_U32(), value >> 2, count);
-}
-
-function _emscripten_glUniform2f(location, v0, v1) {
- GLctx.uniform2f(webglGetUniformLocation(location), v0, v1);
-}
-
-var __miniTempWebGLIntBuffers = [];
-
-function _emscripten_glUniform2iv(location, count, value) {
- if (GL.currentContext.version >= 2) {
-  count && GLctx.uniform2iv(webglGetUniformLocation(location), GROWABLE_HEAP_I32(), value >> 2, count * 2);
-  return;
- }
- if (count <= 144) {
-  var view = __miniTempWebGLIntBuffers[2 * count - 1];
-  for (var i = 0; i < 2 * count; i += 2) {
-   view[i] = GROWABLE_HEAP_I32()[value + 4 * i >> 2];
-   view[i + 1] = GROWABLE_HEAP_I32()[value + (4 * i + 4) >> 2];
-  }
- } else {
-  var view = GROWABLE_HEAP_I32().subarray(value >> 2, value + count * 8 >> 2);
- }
- GLctx.uniform2iv(webglGetUniformLocation(location), view);
 }
 
 var miniTempWebGLFloatBuffers = [];
@@ -8030,21 +7904,6 @@ function _emscripten_webgl_do_create_context(target, attributes) {
  return contextHandle;
 }
 
-function _emscripten_webgl_enable_extension(contextHandle, extension) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(37, 1, contextHandle, extension);
- var context = GL.getContext(contextHandle);
- var extString = UTF8ToString(extension);
- if (extString.startsWith("GL_")) extString = extString.substr(3);
- if (extString == "ANGLE_instanced_arrays") __webgl_enable_ANGLE_instanced_arrays(GLctx);
- if (extString == "OES_vertex_array_object") __webgl_enable_OES_vertex_array_object(GLctx);
- if (extString == "WEBGL_draw_buffers") __webgl_enable_WEBGL_draw_buffers(GLctx);
- if (extString == "WEBGL_draw_instanced_base_vertex_base_instance") __webgl_enable_WEBGL_draw_instanced_base_vertex_base_instance(GLctx);
- if (extString == "WEBGL_multi_draw_instanced_base_vertex_base_instance") __webgl_enable_WEBGL_multi_draw_instanced_base_vertex_base_instance(GLctx);
- if (extString == "WEBGL_multi_draw") __webgl_enable_WEBGL_multi_draw(GLctx);
- var ext = context.GLctx.getExtension(extString);
- return !!ext;
-}
-
 function _emscripten_webgl_init_context_attributes(attributes) {
  assert(attributes);
  var a = attributes >> 2;
@@ -8100,7 +7959,7 @@ function writeAsciiToMemory(str, buffer, dontAddNull) {
 }
 
 function _environ_get(__environ, environ_buf) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(38, 1, __environ, environ_buf);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(37, 1, __environ, environ_buf);
  var bufSize = 0;
  getEnvStrings().forEach(function(string, i) {
   var ptr = environ_buf + bufSize;
@@ -8112,7 +7971,7 @@ function _environ_get(__environ, environ_buf) {
 }
 
 function _environ_sizes_get(penviron_count, penviron_buf_size) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(39, 1, penviron_count, penviron_buf_size);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(38, 1, penviron_count, penviron_buf_size);
  var strings = getEnvStrings();
  GROWABLE_HEAP_U32()[penviron_count >> 2] = strings.length;
  var bufSize = 0;
@@ -8124,7 +7983,7 @@ function _environ_sizes_get(penviron_count, penviron_buf_size) {
 }
 
 function _fd_close(fd) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(40, 1, fd);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(39, 1, fd);
  try {
   var stream = SYSCALLS.getStreamFromFD(fd);
   FS.close(stream);
@@ -8136,7 +7995,7 @@ function _fd_close(fd) {
 }
 
 function _fd_fdstat_get(fd, pbuf) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(41, 1, fd, pbuf);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(40, 1, fd, pbuf);
  try {
   var stream = SYSCALLS.getStreamFromFD(fd);
   var type = stream.tty ? 2 : FS.isDir(stream.mode) ? 3 : FS.isLink(stream.mode) ? 7 : 4;
@@ -8163,7 +8022,7 @@ function doReadv(stream, iov, iovcnt, offset) {
 }
 
 function _fd_read(fd, iov, iovcnt, pnum) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(42, 1, fd, iov, iovcnt, pnum);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(41, 1, fd, iov, iovcnt, pnum);
  try {
   var stream = SYSCALLS.getStreamFromFD(fd);
   var num = doReadv(stream, iov, iovcnt);
@@ -8182,7 +8041,7 @@ function convertI32PairToI53Checked(lo, hi) {
 }
 
 function _fd_seek(fd, offset_low, offset_high, whence, newOffset) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(43, 1, fd, offset_low, offset_high, whence, newOffset);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(42, 1, fd, offset_low, offset_high, whence, newOffset);
  try {
   var offset = convertI32PairToI53Checked(offset_low, offset_high);
   if (isNaN(offset)) return 61;
@@ -8212,7 +8071,7 @@ function doWritev(stream, iov, iovcnt, offset) {
 }
 
 function _fd_write(fd, iov, iovcnt, pnum) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(44, 1, fd, iov, iovcnt, pnum);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(43, 1, fd, iov, iovcnt, pnum);
  try {
   var stream = SYSCALLS.getStreamFromFD(fd);
   var num = doWritev(stream, iov, iovcnt);
@@ -8229,7 +8088,7 @@ function _getTempRet0() {
 }
 
 function _getaddrinfo(node, service, hint, out) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(45, 1, node, service, hint, out);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(44, 1, node, service, hint, out);
  var addrs = [];
  var canon = null;
  var addr = 0;
@@ -8749,14 +8608,14 @@ var GodotAudio = {
 };
 
 function _godot_audio_capture_start() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(46, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(45, 1);
  return GodotAudio.create_input(function(input) {
   input.connect(GodotAudio.driver.get_node());
  });
 }
 
 function _godot_audio_capture_stop() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(47, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(46, 1);
  if (GodotAudio.input) {
   const tracks = GodotAudio.input["mediaStream"]["getTracks"]();
   for (let i = 0; i < tracks.length; i++) {
@@ -8781,7 +8640,7 @@ function _godot_audio_init(p_mix_rate, p_latency, p_state_change, p_latency_upda
 }
 
 function _godot_audio_is_available() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(48, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(47, 1);
  if (!(window.AudioContext || window.webkitAudioContext)) {
   return 0;
  }
@@ -11169,22 +11028,6 @@ function _godot_js_wrapper_object_unref(p_id) {
  }
 }
 
-var GodotWebGL2 = {};
-
-function _godot_webgl2_glFramebufferTextureMultiviewOVR(target, attachment, texture, level, base_view_index, num_views) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(49, 1, target, attachment, texture, level, base_view_index, num_views);
- const context = GL.currentContext;
- if (typeof context.multiviewExt === "undefined") {
-  const ext = context.GLctx.getExtension("OVR_multiview2");
-  if (!ext) {
-   console.error("Trying to call glFramebufferTextureMultiviewOVR() without the OVR_multiview2 extension");
-   return;
-  }
-  context.multiviewExt = ext;
- }
- context.multiviewExt.framebufferTextureMultiviewOVR(target, attachment, GL.textures[texture], level, base_view_index, num_views);
-}
-
 var GodotWebXR = {
  gl: null,
  session: null,
@@ -11214,9 +11057,7 @@ var GodotWebXR = {
  },
  pauseResumeMainLoop: () => {
   Browser.mainLoop.pause();
-  runtimeKeepalivePush();
   window.setTimeout(function() {
-   runtimeKeepalivePop();
    Browser.mainLoop.resume();
   }, 0);
  },
@@ -11243,35 +11084,26 @@ var GodotWebXR = {
  getControllerId: input_source => GodotWebXR.controllers.indexOf(input_source)
 };
 
-function _godot_webxr_commit(p_texture) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(50, 1, p_texture);
+function _godot_webxr_commit_for_eye(p_eye, p_destination_fbo) {
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(48, 1, p_eye, p_destination_fbo);
  if (!GodotWebXR.session || !GodotWebXR.pose) {
   return;
  }
+ const view_index = p_eye === 2 ? 1 : 0;
  const glLayer = GodotWebXR.session.renderState.baseLayer;
- const views = GodotWebXR.pose.views;
+ const view = GodotWebXR.pose.views[view_index];
+ const viewport = glLayer.getViewport(view);
  const gl = GodotWebXR.gl;
- const texture = GL.textures[p_texture];
+ const framebuffer = GL.framebuffers[p_destination_fbo];
  const orig_framebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING);
  const orig_read_framebuffer = gl.getParameter(gl.READ_FRAMEBUFFER_BINDING);
  const orig_read_buffer = gl.getParameter(gl.READ_BUFFER);
  const orig_draw_framebuffer = gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING);
  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
- for (let i = 0; i < views.length; i++) {
-  const viewport = glLayer.getViewport(views[i]);
-  const read_fbo = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, read_fbo);
-  if (views.length > 1) {
-   gl.framebufferTextureLayer(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, texture, 0, i);
-  } else {
-   gl.framebufferTexture2D(gl.READ_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-  }
-  gl.readBuffer(gl.COLOR_ATTACHMENT0);
-  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, glLayer.framebuffer);
-  gl.blitFramebuffer(0, 0, viewport.width, viewport.height, viewport.x, viewport.y + viewport.height, viewport.x + viewport.width, viewport.y, gl.COLOR_BUFFER_BIT, gl.NEAREST);
-  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
-  gl.deleteFramebuffer(read_fbo);
- }
+ gl.bindFramebuffer(gl.READ_FRAMEBUFFER, framebuffer);
+ gl.readBuffer(gl.COLOR_ATTACHMENT0);
+ gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, glLayer.framebuffer);
+ gl.blitFramebuffer(0, 0, viewport.width, viewport.height, viewport.x, viewport.height, viewport.width, viewport.y, gl.COLOR_BUFFER_BIT, gl.NEAREST);
  gl.bindFramebuffer(gl.FRAMEBUFFER, orig_framebuffer);
  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, orig_read_framebuffer);
  gl.readBuffer(orig_read_buffer);
@@ -11279,7 +11111,7 @@ function _godot_webxr_commit(p_texture) {
 }
 
 function _godot_webxr_get_bounds_geometry() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(51, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(49, 1);
  if (!GodotWebXR.space || !GodotWebXR.space.boundsGeometry) {
   return 0;
  }
@@ -11299,7 +11131,7 @@ function _godot_webxr_get_bounds_geometry() {
 }
 
 function _godot_webxr_get_controller_axes(p_controller) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(52, 1, p_controller);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(50, 1, p_controller);
  if (GodotWebXR.controllers.length === 0) {
   return 0;
  }
@@ -11321,7 +11153,7 @@ function _godot_webxr_get_controller_axes(p_controller) {
 }
 
 function _godot_webxr_get_controller_buttons(p_controller) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(53, 1, p_controller);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(51, 1, p_controller);
  if (GodotWebXR.controllers.length === 0) {
   return 0;
  }
@@ -11339,7 +11171,7 @@ function _godot_webxr_get_controller_buttons(p_controller) {
 }
 
 function _godot_webxr_get_controller_count() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(54, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(52, 1);
  if (!GodotWebXR.session || !GodotWebXR.frame) {
   return 0;
  }
@@ -11347,7 +11179,7 @@ function _godot_webxr_get_controller_count() {
 }
 
 function _godot_webxr_get_controller_transform(p_controller) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(55, 1, p_controller);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(53, 1, p_controller);
  if (!GodotWebXR.session || !GodotWebXR.frame) {
   return 0;
  }
@@ -11370,7 +11202,7 @@ function _godot_webxr_get_controller_transform(p_controller) {
 }
 
 function _godot_webxr_get_projection_for_eye(p_eye) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(56, 1, p_eye);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(54, 1, p_eye);
  if (!GodotWebXR.session || !GodotWebXR.pose) {
   return 0;
  }
@@ -11384,7 +11216,7 @@ function _godot_webxr_get_projection_for_eye(p_eye) {
 }
 
 function _godot_webxr_get_render_target_size() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(57, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(55, 1);
  if (!GodotWebXR.session || !GodotWebXR.pose) {
   return 0;
  }
@@ -11398,7 +11230,7 @@ function _godot_webxr_get_render_target_size() {
 }
 
 function _godot_webxr_get_transform_for_eye(p_eye) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(58, 1, p_eye);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(56, 1, p_eye);
  if (!GodotWebXR.session || !GodotWebXR.pose) {
   return 0;
  }
@@ -11417,7 +11249,7 @@ function _godot_webxr_get_transform_for_eye(p_eye) {
 }
 
 function _godot_webxr_get_view_count() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(59, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(57, 1);
  if (!GodotWebXR.session || !GodotWebXR.pose) {
   return 0;
  }
@@ -11425,7 +11257,7 @@ function _godot_webxr_get_view_count() {
 }
 
 function _godot_webxr_get_visibility_state() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(60, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(58, 1);
  if (!GodotWebXR.session || !GodotWebXR.session.visibilityState) {
   return 0;
  }
@@ -11433,7 +11265,7 @@ function _godot_webxr_get_visibility_state() {
 }
 
 function _godot_webxr_initialize(p_session_mode, p_required_features, p_optional_features, p_requested_reference_spaces, p_on_session_started, p_on_session_ended, p_on_session_failed, p_on_controller_changed, p_on_input_event, p_on_simple_event) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(61, 1, p_session_mode, p_required_features, p_optional_features, p_requested_reference_spaces, p_on_session_started, p_on_session_ended, p_on_session_failed, p_on_controller_changed, p_on_input_event, p_on_simple_event);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(59, 1, p_session_mode, p_required_features, p_optional_features, p_requested_reference_spaces, p_on_session_started, p_on_session_ended, p_on_session_failed, p_on_controller_changed, p_on_input_event, p_on_simple_event);
  GodotWebXR.monkeyPatchRequestAnimationFrame(true);
  const session_mode = GodotRuntime.parseString(p_session_mode);
  const required_features = GodotRuntime.parseString(p_required_features).split(",").map(s => s.trim()).filter(s => s !== "");
@@ -11531,7 +11363,7 @@ function _godot_webxr_initialize(p_session_mode, p_required_features, p_optional
 }
 
 function _godot_webxr_is_controller_connected(p_controller) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(62, 1, p_controller);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(60, 1, p_controller);
  if (!GodotWebXR.session || !GodotWebXR.frame) {
   return false;
  }
@@ -11539,7 +11371,7 @@ function _godot_webxr_is_controller_connected(p_controller) {
 }
 
 function _godot_webxr_is_session_supported(p_session_mode, p_callback) {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(63, 1, p_session_mode, p_callback);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(61, 1, p_session_mode, p_callback);
  const session_mode = GodotRuntime.parseString(p_session_mode);
  const cb = GodotRuntime.get_func(p_callback);
  if (navigator.xr) {
@@ -11556,17 +11388,17 @@ function _godot_webxr_is_session_supported(p_session_mode, p_callback) {
 }
 
 function _godot_webxr_is_supported() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(64, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(62, 1);
  return !!navigator.xr;
 }
 
 function _godot_webxr_sample_controller_data() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(65, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(63, 1);
  GodotWebXR.sampleControllers();
 }
 
 function _godot_webxr_uninitialize() {
- if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(66, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(64, 1);
  if (GodotWebXR.session) {
   GodotWebXR.session.end().catch(e => {});
  }
@@ -12429,12 +12261,6 @@ var preloadedAudios = {};
 
 var GLctx;
 
-var __miniTempWebGLIntBuffersStorage = new Int32Array(288);
-
-for (var i = 0; i < 288; ++i) {
- __miniTempWebGLIntBuffers[i] = __miniTempWebGLIntBuffersStorage.subarray(0, i + 1);
-}
-
 var miniTempWebGLFloatBuffersStorage = new Float32Array(288);
 
 for (var i = 0; i < 288; ++i) {
@@ -12472,7 +12298,7 @@ GodotOS.atexit(function(resolve, reject) {
 
 GodotJSWrapper.proxies = new Map();
 
-var proxiedFunctionTable = [ null, _proc_exit, exitOnMainThread, pthreadCreateProxied, ___syscall__newselect, ___syscall_accept4, ___syscall_bind, ___syscall_chdir, ___syscall_chmod, ___syscall_connect, ___syscall_faccessat, ___syscall_fcntl64, ___syscall_getcwd, ___syscall_getdents64, ___syscall_getsockname, ___syscall_getsockopt, ___syscall_ioctl, ___syscall_listen, ___syscall_lstat64, ___syscall_mkdirat, ___syscall_newfstatat, ___syscall_openat, ___syscall_poll, ___syscall_readlinkat, ___syscall_recvfrom, ___syscall_renameat, ___syscall_rmdir, ___syscall_sendto, ___syscall_socket, ___syscall_stat64, ___syscall_statfs64, ___syscall_symlink, ___syscall_unlinkat, _tzset_impl, _emscripten_force_exit, _emscripten_webgl_destroy_context, _emscripten_webgl_create_context_proxied, _emscripten_webgl_enable_extension, _environ_get, _environ_sizes_get, _fd_close, _fd_fdstat_get, _fd_read, _fd_seek, _fd_write, _getaddrinfo, _godot_audio_capture_start, _godot_audio_capture_stop, _godot_audio_is_available, _godot_webgl2_glFramebufferTextureMultiviewOVR, _godot_webxr_commit, _godot_webxr_get_bounds_geometry, _godot_webxr_get_controller_axes, _godot_webxr_get_controller_buttons, _godot_webxr_get_controller_count, _godot_webxr_get_controller_transform, _godot_webxr_get_projection_for_eye, _godot_webxr_get_render_target_size, _godot_webxr_get_transform_for_eye, _godot_webxr_get_view_count, _godot_webxr_get_visibility_state, _godot_webxr_initialize, _godot_webxr_is_controller_connected, _godot_webxr_is_session_supported, _godot_webxr_is_supported, _godot_webxr_sample_controller_data, _godot_webxr_uninitialize ];
+var proxiedFunctionTable = [ null, _proc_exit, exitOnMainThread, pthreadCreateProxied, ___syscall__newselect, ___syscall_accept4, ___syscall_bind, ___syscall_chdir, ___syscall_chmod, ___syscall_connect, ___syscall_faccessat, ___syscall_fcntl64, ___syscall_getcwd, ___syscall_getdents64, ___syscall_getsockname, ___syscall_getsockopt, ___syscall_ioctl, ___syscall_listen, ___syscall_lstat64, ___syscall_mkdirat, ___syscall_newfstatat, ___syscall_openat, ___syscall_poll, ___syscall_readlinkat, ___syscall_recvfrom, ___syscall_renameat, ___syscall_rmdir, ___syscall_sendto, ___syscall_socket, ___syscall_stat64, ___syscall_statfs64, ___syscall_symlink, ___syscall_unlinkat, _tzset_impl, _emscripten_force_exit, _emscripten_webgl_destroy_context, _emscripten_webgl_create_context_proxied, _environ_get, _environ_sizes_get, _fd_close, _fd_fdstat_get, _fd_read, _fd_seek, _fd_write, _getaddrinfo, _godot_audio_capture_start, _godot_audio_capture_stop, _godot_audio_is_available, _godot_webxr_commit_for_eye, _godot_webxr_get_bounds_geometry, _godot_webxr_get_controller_axes, _godot_webxr_get_controller_buttons, _godot_webxr_get_controller_count, _godot_webxr_get_controller_transform, _godot_webxr_get_projection_for_eye, _godot_webxr_get_render_target_size, _godot_webxr_get_transform_for_eye, _godot_webxr_get_view_count, _godot_webxr_get_visibility_state, _godot_webxr_initialize, _godot_webxr_is_controller_connected, _godot_webxr_is_session_supported, _godot_webxr_is_supported, _godot_webxr_sample_controller_data, _godot_webxr_uninitialize ];
 
 var ASSERTIONS = true;
 
@@ -12536,12 +12362,10 @@ var asmLibraryArg = {
  "emscripten_get_now": _emscripten_get_now,
  "emscripten_glActiveTexture": _emscripten_glActiveTexture,
  "emscripten_glAttachShader": _emscripten_glAttachShader,
- "emscripten_glBeginTransformFeedback": _emscripten_glBeginTransformFeedback,
  "emscripten_glBindBuffer": _emscripten_glBindBuffer,
  "emscripten_glBindBufferBase": _emscripten_glBindBufferBase,
  "emscripten_glBindBufferRange": _emscripten_glBindBufferRange,
  "emscripten_glBindFramebuffer": _emscripten_glBindFramebuffer,
- "emscripten_glBindRenderbuffer": _emscripten_glBindRenderbuffer,
  "emscripten_glBindTexture": _emscripten_glBindTexture,
  "emscripten_glBindVertexArray": _emscripten_glBindVertexArray,
  "emscripten_glBlendColor": _emscripten_glBlendColor,
@@ -12556,18 +12380,16 @@ var asmLibraryArg = {
  "emscripten_glClearBufferfv": _emscripten_glClearBufferfv,
  "emscripten_glClearColor": _emscripten_glClearColor,
  "emscripten_glClearDepthf": _emscripten_glClearDepthf,
+ "emscripten_glClientWaitSync": _emscripten_glClientWaitSync,
  "emscripten_glColorMask": _emscripten_glColorMask,
  "emscripten_glCompileShader": _emscripten_glCompileShader,
  "emscripten_glCompressedTexImage2D": _emscripten_glCompressedTexImage2D,
- "emscripten_glCopyBufferSubData": _emscripten_glCopyBufferSubData,
  "emscripten_glCreateProgram": _emscripten_glCreateProgram,
  "emscripten_glCreateShader": _emscripten_glCreateShader,
  "emscripten_glCullFace": _emscripten_glCullFace,
  "emscripten_glDeleteBuffers": _emscripten_glDeleteBuffers,
  "emscripten_glDeleteFramebuffers": _emscripten_glDeleteFramebuffers,
  "emscripten_glDeleteProgram": _emscripten_glDeleteProgram,
- "emscripten_glDeleteQueries": _emscripten_glDeleteQueries,
- "emscripten_glDeleteRenderbuffers": _emscripten_glDeleteRenderbuffers,
  "emscripten_glDeleteShader": _emscripten_glDeleteShader,
  "emscripten_glDeleteSync": _emscripten_glDeleteSync,
  "emscripten_glDeleteTextures": _emscripten_glDeleteTextures,
@@ -12582,17 +12404,11 @@ var asmLibraryArg = {
  "emscripten_glDrawElementsInstanced": _emscripten_glDrawElementsInstanced,
  "emscripten_glEnable": _emscripten_glEnable,
  "emscripten_glEnableVertexAttribArray": _emscripten_glEnableVertexAttribArray,
- "emscripten_glEndTransformFeedback": _emscripten_glEndTransformFeedback,
  "emscripten_glFenceSync": _emscripten_glFenceSync,
  "emscripten_glFinish": _emscripten_glFinish,
- "emscripten_glFramebufferRenderbuffer": _emscripten_glFramebufferRenderbuffer,
  "emscripten_glFramebufferTexture2D": _emscripten_glFramebufferTexture2D,
- "emscripten_glFramebufferTextureLayer": _emscripten_glFramebufferTextureLayer,
- "emscripten_glFrontFace": _emscripten_glFrontFace,
  "emscripten_glGenBuffers": _emscripten_glGenBuffers,
  "emscripten_glGenFramebuffers": _emscripten_glGenFramebuffers,
- "emscripten_glGenQueries": _emscripten_glGenQueries,
- "emscripten_glGenRenderbuffers": _emscripten_glGenRenderbuffers,
  "emscripten_glGenTextures": _emscripten_glGenTextures,
  "emscripten_glGenVertexArrays": _emscripten_glGenVertexArrays,
  "emscripten_glGenerateMipmap": _emscripten_glGenerateMipmap,
@@ -12610,23 +12426,15 @@ var asmLibraryArg = {
  "emscripten_glLinkProgram": _emscripten_glLinkProgram,
  "emscripten_glPixelStorei": _emscripten_glPixelStorei,
  "emscripten_glReadBuffer": _emscripten_glReadBuffer,
- "emscripten_glReadPixels": _emscripten_glReadPixels,
- "emscripten_glRenderbufferStorage": _emscripten_glRenderbufferStorage,
  "emscripten_glScissor": _emscripten_glScissor,
  "emscripten_glShaderSource": _emscripten_glShaderSource,
  "emscripten_glTexImage2D": _emscripten_glTexImage2D,
- "emscripten_glTexImage3D": _emscripten_glTexImage3D,
  "emscripten_glTexParameterf": _emscripten_glTexParameterf,
  "emscripten_glTexParameteri": _emscripten_glTexParameteri,
  "emscripten_glTexStorage2D": _emscripten_glTexStorage2D,
- "emscripten_glTexSubImage3D": _emscripten_glTexSubImage3D,
- "emscripten_glTransformFeedbackVaryings": _emscripten_glTransformFeedbackVaryings,
  "emscripten_glUniform1f": _emscripten_glUniform1f,
  "emscripten_glUniform1i": _emscripten_glUniform1i,
- "emscripten_glUniform1ui": _emscripten_glUniform1ui,
  "emscripten_glUniform1uiv": _emscripten_glUniform1uiv,
- "emscripten_glUniform2f": _emscripten_glUniform2f,
- "emscripten_glUniform2iv": _emscripten_glUniform2iv,
  "emscripten_glUniform3fv": _emscripten_glUniform3fv,
  "emscripten_glUniform4f": _emscripten_glUniform4f,
  "emscripten_glUniform4fv": _emscripten_glUniform4fv,
@@ -12648,7 +12456,6 @@ var asmLibraryArg = {
  "emscripten_webgl_destroy_context": _emscripten_webgl_destroy_context,
  "emscripten_webgl_do_commit_frame": _emscripten_webgl_do_commit_frame,
  "emscripten_webgl_do_create_context": _emscripten_webgl_do_create_context,
- "emscripten_webgl_enable_extension": _emscripten_webgl_enable_extension,
  "emscripten_webgl_init_context_attributes": _emscripten_webgl_init_context_attributes,
  "emscripten_webgl_make_context_current_calling_thread": _emscripten_webgl_make_context_current_calling_thread,
  "environ_get": _environ_get,
@@ -12783,8 +12590,7 @@ var asmLibraryArg = {
  "godot_js_wrapper_object_set_cb_ret": _godot_js_wrapper_object_set_cb_ret,
  "godot_js_wrapper_object_setvar": _godot_js_wrapper_object_setvar,
  "godot_js_wrapper_object_unref": _godot_js_wrapper_object_unref,
- "godot_webgl2_glFramebufferTextureMultiviewOVR": _godot_webgl2_glFramebufferTextureMultiviewOVR,
- "godot_webxr_commit": _godot_webxr_commit,
+ "godot_webxr_commit_for_eye": _godot_webxr_commit_for_eye,
  "godot_webxr_get_bounds_geometry": _godot_webxr_get_bounds_geometry,
  "godot_webxr_get_controller_axes": _godot_webxr_get_controller_axes,
  "godot_webxr_get_controller_buttons": _godot_webxr_get_controller_buttons,
@@ -13123,8 +12929,6 @@ var dynCall_vijiiiiii = Module["dynCall_vijiiiiii"] = createExportWrapper("dynCa
 
 var dynCall_vijiff = Module["dynCall_vijiff"] = createExportWrapper("dynCall_vijiff");
 
-var dynCall_vijjjj = Module["dynCall_vijjjj"] = createExportWrapper("dynCall_vijjjj");
-
 var dynCall_vijiiiiiii = Module["dynCall_vijiiiiiii"] = createExportWrapper("dynCall_vijiiiiiii");
 
 var dynCall_jiiifi = Module["dynCall_jiiifi"] = createExportWrapper("dynCall_jiiifi");
@@ -13325,11 +13129,11 @@ Module["ExitStatus"] = ExitStatus;
 
 Module["PThread"] = PThread;
 
-var unexportedRuntimeSymbols = [ "run", "UTF8ArrayToString", "UTF8ToString", "stringToUTF8Array", "stringToUTF8", "lengthBytesUTF8", "addOnPreRun", "addOnInit", "addOnPreMain", "addOnExit", "addOnPostRun", "addRunDependency", "removeRunDependency", "FS_createFolder", "FS_createPath", "FS_createDataFile", "FS_createPreloadedFile", "FS_createLazyFile", "FS_createLink", "FS_createDevice", "FS_unlink", "getLEB", "getFunctionTables", "alignFunctionTables", "registerFunctions", "prettyPrint", "getCompilerSetting", "print", "printErr", "getTempRet0", "setTempRet0", "abort", "stackSave", "stackRestore", "stackAlloc", "GROWABLE_HEAP_I8", "GROWABLE_HEAP_U8", "GROWABLE_HEAP_I16", "GROWABLE_HEAP_U16", "GROWABLE_HEAP_I32", "GROWABLE_HEAP_U32", "GROWABLE_HEAP_F32", "GROWABLE_HEAP_F64", "writeStackCookie", "checkStackCookie", "ptrToString", "zeroMemory", "stringToNewUTF8", "exitJS", "getHeapMax", "emscripten_realloc_buffer", "ENV", "ERRNO_CODES", "ERRNO_MESSAGES", "setErrNo", "inetPton4", "inetNtop4", "inetPton6", "inetNtop6", "readSockaddr", "writeSockaddr", "DNS", "getHostByName", "Protocols", "Sockets", "getRandomDevice", "warnOnce", "traverseStack", "UNWIND_CACHE", "convertPCtoSourceLocation", "readAsmConstArgsArray", "readAsmConstArgs", "mainThreadEM_ASM", "jstoi_q", "jstoi_s", "getExecutableName", "listenOnce", "autoResumeAudioContext", "dynCallLegacy", "getDynCaller", "dynCall", "handleException", "runtimeKeepalivePush", "runtimeKeepalivePop", "callUserCallback", "maybeExit", "safeSetTimeout", "asmjsMangle", "asyncLoad", "alignMemory", "mmapAlloc", "writeI53ToI64", "writeI53ToI64Clamped", "writeI53ToI64Signaling", "writeI53ToU64Clamped", "writeI53ToU64Signaling", "readI53FromI64", "readI53FromU64", "convertI32PairToI53", "convertI32PairToI53Checked", "convertU32PairToI53", "getCFunc", "ccall", "uleb128Encode", "sigToWasmTypes", "convertJsFunctionToWasm", "freeTableIndexes", "functionsInTableMap", "getEmptyTableSlot", "updateTableMap", "addFunction", "removeFunction", "reallyNegative", "unSign", "strLen", "reSign", "formatString", "setValue", "getValue", "PATH", "PATH_FS", "intArrayFromString", "intArrayToString", "AsciiToString", "stringToAscii", "UTF16Decoder", "UTF16ToString", "stringToUTF16", "lengthBytesUTF16", "UTF32ToString", "stringToUTF32", "lengthBytesUTF32", "allocateUTF8", "allocateUTF8OnStack", "writeStringToMemory", "writeArrayToMemory", "writeAsciiToMemory", "SYSCALLS", "getSocketFromFD", "getSocketAddress", "JSEvents", "registerKeyEventCallback", "specialHTMLTargets", "maybeCStringToJsString", "findEventTarget", "findCanvasEventTarget", "getBoundingClientRect", "fillMouseEventData", "registerMouseEventCallback", "registerWheelEventCallback", "registerUiEventCallback", "registerFocusEventCallback", "fillDeviceOrientationEventData", "registerDeviceOrientationEventCallback", "fillDeviceMotionEventData", "registerDeviceMotionEventCallback", "screenOrientation", "fillOrientationChangeEventData", "registerOrientationChangeEventCallback", "fillFullscreenChangeEventData", "registerFullscreenChangeEventCallback", "JSEvents_requestFullscreen", "JSEvents_resizeCanvasForFullscreen", "registerRestoreOldStyle", "hideEverythingExceptGivenElement", "restoreHiddenElements", "setLetterbox", "currentFullscreenStrategy", "restoreOldWindowedStyle", "softFullscreenResizeWebGLRenderTarget", "doRequestFullscreen", "fillPointerlockChangeEventData", "registerPointerlockChangeEventCallback", "registerPointerlockErrorEventCallback", "requestPointerLock", "fillVisibilityChangeEventData", "registerVisibilityChangeEventCallback", "registerTouchEventCallback", "fillGamepadEventData", "registerGamepadEventCallback", "registerBeforeUnloadEventCallback", "fillBatteryEventData", "battery", "registerBatteryEventCallback", "setCanvasElementSize", "getCanvasElementSize", "demangle", "demangleAll", "jsStackTrace", "stackTrace", "getEnvStrings", "checkWasiClock", "doReadv", "doWritev", "dlopenMissingError", "setImmediateWrapped", "clearImmediateWrapped", "polyfillSetImmediate", "uncaughtExceptionCount", "exceptionLast", "exceptionCaught", "ExceptionInfo", "exception_addRef", "exception_decRef", "Browser", "setMainLoop", "wget", "FS", "MEMFS", "TTY", "PIPEFS", "SOCKFS", "_setNetworkCallback", "tempFixedLengthArray", "miniTempWebGLFloatBuffers", "heapObjectForWebGLType", "heapAccessShiftForWebGLHeap", "GL", "emscriptenWebGLGet", "computeUnpackAlignedImageSize", "emscriptenWebGLGetTexPixelData", "emscriptenWebGLGetUniform", "webglGetUniformLocation", "webglPrepareUniformLocationsBeforeFirstUse", "webglGetLeftBracePos", "emscriptenWebGLGetVertexAttrib", "writeGLArray", "AL", "SDL_unicode", "SDL_ttfContext", "SDL_audio", "SDL", "SDL_gfx", "GLUT", "EGL", "GLFW_Window", "GLFW", "GLEW", "IDBStore", "runAndAbortIfError", "emscriptenWebGLGetIndexed", "ALLOC_NORMAL", "ALLOC_STACK", "allocate", "killThread", "cleanupThread", "registerTLSInit", "cancelThread", "spawnThread", "exitOnMainThread", "invokeEntryPoint", "executeNotifiedProxyingQueue", "GodotWebXR", "GodotWebSocket", "GodotRTCDataChannel", "GodotRTCPeerConnection", "GodotAudio", "GodotAudioWorklet", "GodotAudioScript", "GodotDisplayVK", "GodotDisplayCursor", "GodotDisplayScreen", "GodotDisplay", "GodotFetch", "IDHandler", "GodotConfig", "GodotFS", "GodotOS", "GodotEventListeners", "GodotPWA", "GodotRuntime", "GodotInputGamepads", "GodotInputDragDrop", "GodotInput", "GodotWebGL2", "GodotJSWrapper", "IDBFS" ];
+var unexportedRuntimeSymbols = [ "run", "UTF8ArrayToString", "UTF8ToString", "stringToUTF8Array", "stringToUTF8", "lengthBytesUTF8", "addOnPreRun", "addOnInit", "addOnPreMain", "addOnExit", "addOnPostRun", "addRunDependency", "removeRunDependency", "FS_createFolder", "FS_createPath", "FS_createDataFile", "FS_createPreloadedFile", "FS_createLazyFile", "FS_createLink", "FS_createDevice", "FS_unlink", "getLEB", "getFunctionTables", "alignFunctionTables", "registerFunctions", "prettyPrint", "getCompilerSetting", "print", "printErr", "getTempRet0", "setTempRet0", "abort", "stackSave", "stackRestore", "stackAlloc", "GROWABLE_HEAP_I8", "GROWABLE_HEAP_U8", "GROWABLE_HEAP_I16", "GROWABLE_HEAP_U16", "GROWABLE_HEAP_I32", "GROWABLE_HEAP_U32", "GROWABLE_HEAP_F32", "GROWABLE_HEAP_F64", "writeStackCookie", "checkStackCookie", "ptrToString", "zeroMemory", "stringToNewUTF8", "exitJS", "getHeapMax", "emscripten_realloc_buffer", "ENV", "ERRNO_CODES", "ERRNO_MESSAGES", "setErrNo", "inetPton4", "inetNtop4", "inetPton6", "inetNtop6", "readSockaddr", "writeSockaddr", "DNS", "getHostByName", "Protocols", "Sockets", "getRandomDevice", "warnOnce", "traverseStack", "UNWIND_CACHE", "convertPCtoSourceLocation", "readAsmConstArgsArray", "readAsmConstArgs", "mainThreadEM_ASM", "jstoi_q", "jstoi_s", "getExecutableName", "listenOnce", "autoResumeAudioContext", "dynCallLegacy", "getDynCaller", "dynCall", "handleException", "runtimeKeepalivePush", "runtimeKeepalivePop", "callUserCallback", "maybeExit", "safeSetTimeout", "asmjsMangle", "asyncLoad", "alignMemory", "mmapAlloc", "writeI53ToI64", "writeI53ToI64Clamped", "writeI53ToI64Signaling", "writeI53ToU64Clamped", "writeI53ToU64Signaling", "readI53FromI64", "readI53FromU64", "convertI32PairToI53", "convertI32PairToI53Checked", "convertU32PairToI53", "getCFunc", "ccall", "uleb128Encode", "sigToWasmTypes", "convertJsFunctionToWasm", "freeTableIndexes", "functionsInTableMap", "getEmptyTableSlot", "updateTableMap", "addFunction", "removeFunction", "reallyNegative", "unSign", "strLen", "reSign", "formatString", "setValue", "getValue", "PATH", "PATH_FS", "intArrayFromString", "intArrayToString", "AsciiToString", "stringToAscii", "UTF16Decoder", "UTF16ToString", "stringToUTF16", "lengthBytesUTF16", "UTF32ToString", "stringToUTF32", "lengthBytesUTF32", "allocateUTF8", "allocateUTF8OnStack", "writeStringToMemory", "writeArrayToMemory", "writeAsciiToMemory", "SYSCALLS", "getSocketFromFD", "getSocketAddress", "JSEvents", "registerKeyEventCallback", "specialHTMLTargets", "maybeCStringToJsString", "findEventTarget", "findCanvasEventTarget", "getBoundingClientRect", "fillMouseEventData", "registerMouseEventCallback", "registerWheelEventCallback", "registerUiEventCallback", "registerFocusEventCallback", "fillDeviceOrientationEventData", "registerDeviceOrientationEventCallback", "fillDeviceMotionEventData", "registerDeviceMotionEventCallback", "screenOrientation", "fillOrientationChangeEventData", "registerOrientationChangeEventCallback", "fillFullscreenChangeEventData", "registerFullscreenChangeEventCallback", "JSEvents_requestFullscreen", "JSEvents_resizeCanvasForFullscreen", "registerRestoreOldStyle", "hideEverythingExceptGivenElement", "restoreHiddenElements", "setLetterbox", "currentFullscreenStrategy", "restoreOldWindowedStyle", "softFullscreenResizeWebGLRenderTarget", "doRequestFullscreen", "fillPointerlockChangeEventData", "registerPointerlockChangeEventCallback", "registerPointerlockErrorEventCallback", "requestPointerLock", "fillVisibilityChangeEventData", "registerVisibilityChangeEventCallback", "registerTouchEventCallback", "fillGamepadEventData", "registerGamepadEventCallback", "registerBeforeUnloadEventCallback", "fillBatteryEventData", "battery", "registerBatteryEventCallback", "setCanvasElementSize", "getCanvasElementSize", "demangle", "demangleAll", "jsStackTrace", "stackTrace", "getEnvStrings", "checkWasiClock", "doReadv", "doWritev", "dlopenMissingError", "setImmediateWrapped", "clearImmediateWrapped", "polyfillSetImmediate", "uncaughtExceptionCount", "exceptionLast", "exceptionCaught", "ExceptionInfo", "exception_addRef", "exception_decRef", "Browser", "setMainLoop", "wget", "FS", "MEMFS", "TTY", "PIPEFS", "SOCKFS", "_setNetworkCallback", "tempFixedLengthArray", "miniTempWebGLFloatBuffers", "heapObjectForWebGLType", "heapAccessShiftForWebGLHeap", "GL", "emscriptenWebGLGet", "computeUnpackAlignedImageSize", "emscriptenWebGLGetTexPixelData", "emscriptenWebGLGetUniform", "webglGetUniformLocation", "webglPrepareUniformLocationsBeforeFirstUse", "webglGetLeftBracePos", "emscriptenWebGLGetVertexAttrib", "writeGLArray", "AL", "SDL_unicode", "SDL_ttfContext", "SDL_audio", "SDL", "SDL_gfx", "GLUT", "EGL", "GLFW_Window", "GLFW", "GLEW", "IDBStore", "runAndAbortIfError", "emscriptenWebGLGetIndexed", "ALLOC_NORMAL", "ALLOC_STACK", "allocate", "killThread", "cleanupThread", "registerTLSInit", "cancelThread", "spawnThread", "exitOnMainThread", "invokeEntryPoint", "executeNotifiedProxyingQueue", "GodotWebXR", "GodotWebSocket", "GodotRTCDataChannel", "GodotRTCPeerConnection", "GodotAudio", "GodotAudioWorklet", "GodotAudioScript", "GodotDisplayVK", "GodotDisplayCursor", "GodotDisplayScreen", "GodotDisplay", "GodotFetch", "IDHandler", "GodotConfig", "GodotFS", "GodotOS", "GodotEventListeners", "GodotPWA", "GodotRuntime", "GodotInputGamepads", "GodotInputDragDrop", "GodotInput", "GodotJSWrapper", "IDBFS" ];
 
 unexportedRuntimeSymbols.forEach(unexportedRuntimeSymbol);
 
-var missingLibrarySymbols = [ "getHostByName", "traverseStack", "convertPCtoSourceLocation", "readAsmConstArgs", "mainThreadEM_ASM", "jstoi_s", "listenOnce", "autoResumeAudioContext", "dynCallLegacy", "getDynCaller", "dynCall", "asmjsMangle", "writeI53ToI64Clamped", "writeI53ToI64Signaling", "writeI53ToU64Clamped", "writeI53ToU64Signaling", "convertI32PairToI53", "convertU32PairToI53", "reallyNegative", "unSign", "strLen", "reSign", "formatString", "registerKeyEventCallback", "getBoundingClientRect", "fillMouseEventData", "registerMouseEventCallback", "registerWheelEventCallback", "registerUiEventCallback", "registerFocusEventCallback", "fillDeviceOrientationEventData", "registerDeviceOrientationEventCallback", "fillDeviceMotionEventData", "registerDeviceMotionEventCallback", "screenOrientation", "fillOrientationChangeEventData", "registerOrientationChangeEventCallback", "fillFullscreenChangeEventData", "registerFullscreenChangeEventCallback", "JSEvents_requestFullscreen", "JSEvents_resizeCanvasForFullscreen", "registerRestoreOldStyle", "hideEverythingExceptGivenElement", "restoreHiddenElements", "setLetterbox", "softFullscreenResizeWebGLRenderTarget", "doRequestFullscreen", "fillPointerlockChangeEventData", "registerPointerlockChangeEventCallback", "registerPointerlockErrorEventCallback", "requestPointerLock", "fillVisibilityChangeEventData", "registerVisibilityChangeEventCallback", "registerTouchEventCallback", "fillGamepadEventData", "registerGamepadEventCallback", "registerBeforeUnloadEventCallback", "fillBatteryEventData", "battery", "registerBatteryEventCallback", "setCanvasElementSize", "getCanvasElementSize", "checkWasiClock", "setImmediateWrapped", "clearImmediateWrapped", "polyfillSetImmediate", "ExceptionInfo", "exception_addRef", "exception_decRef", "_setNetworkCallback", "emscriptenWebGLGetUniform", "emscriptenWebGLGetVertexAttrib", "writeGLArray", "SDL_unicode", "SDL_ttfContext", "SDL_audio", "GLFW_Window", "runAndAbortIfError", "emscriptenWebGLGetIndexed" ];
+var missingLibrarySymbols = [ "getHostByName", "traverseStack", "convertPCtoSourceLocation", "readAsmConstArgs", "mainThreadEM_ASM", "jstoi_s", "listenOnce", "autoResumeAudioContext", "dynCallLegacy", "getDynCaller", "dynCall", "asmjsMangle", "writeI53ToI64Clamped", "writeI53ToI64Signaling", "writeI53ToU64Clamped", "writeI53ToU64Signaling", "convertU32PairToI53", "reallyNegative", "unSign", "strLen", "reSign", "formatString", "registerKeyEventCallback", "getBoundingClientRect", "fillMouseEventData", "registerMouseEventCallback", "registerWheelEventCallback", "registerUiEventCallback", "registerFocusEventCallback", "fillDeviceOrientationEventData", "registerDeviceOrientationEventCallback", "fillDeviceMotionEventData", "registerDeviceMotionEventCallback", "screenOrientation", "fillOrientationChangeEventData", "registerOrientationChangeEventCallback", "fillFullscreenChangeEventData", "registerFullscreenChangeEventCallback", "JSEvents_requestFullscreen", "JSEvents_resizeCanvasForFullscreen", "registerRestoreOldStyle", "hideEverythingExceptGivenElement", "restoreHiddenElements", "setLetterbox", "softFullscreenResizeWebGLRenderTarget", "doRequestFullscreen", "fillPointerlockChangeEventData", "registerPointerlockChangeEventCallback", "registerPointerlockErrorEventCallback", "requestPointerLock", "fillVisibilityChangeEventData", "registerVisibilityChangeEventCallback", "registerTouchEventCallback", "fillGamepadEventData", "registerGamepadEventCallback", "registerBeforeUnloadEventCallback", "fillBatteryEventData", "battery", "registerBatteryEventCallback", "setCanvasElementSize", "getCanvasElementSize", "checkWasiClock", "setImmediateWrapped", "clearImmediateWrapped", "polyfillSetImmediate", "ExceptionInfo", "exception_addRef", "exception_decRef", "_setNetworkCallback", "emscriptenWebGLGetUniform", "emscriptenWebGLGetVertexAttrib", "writeGLArray", "SDL_unicode", "SDL_ttfContext", "SDL_audio", "GLFW_Window", "runAndAbortIfError", "emscriptenWebGLGetIndexed" ];
 
 missingLibrarySymbols.forEach(missingLibrarySymbol);
 
@@ -13945,7 +13749,7 @@ const InternalConfig = function (initConfig) { // eslint-disable-line no-unused-
 			'print': this.onPrint,
 			'printErr': this.onPrintError,
 			'thisProgram': this.executable,
-			'noExitRuntime': false,
+			'noExitRuntime': true,
 			'dynamicLibraries': [`${loadPath}.side.wasm`],
 			'instantiateWasm': function (imports, onSuccess) {
 				function done(result) {
